@@ -167,7 +167,7 @@ HTML_TEMPLATE = """
                         linkToken = data.link_token;
                     } else {
                         document.getElementById('errorMessage').style.display = 'block';
-                        document.getElementById('errorText').textContent = 'Failed to get link token';
+                        document.getElementById('errorText').textContent = 'Failed to get link token: ' + (data.error || 'Unknown error');
                     }
                 })
                 .catch(error => {
@@ -252,10 +252,13 @@ def get_link_token():
         )
         
         response = plaid_client.link_token_create(request_obj)
+        # Access the link_token attribute from the response object
+        link_token = response.link_token
         return jsonify({
-            'link_token': response['link_token']
+            'link_token': link_token
         })
     except Exception as e:
+        print(f"Error creating link token: {str(e)}")
         return jsonify({'error': str(e)}), 400
 
 @app.route('/exchange_public_token', methods=['POST'])
@@ -272,7 +275,8 @@ def exchange_public_token():
             public_token=public_token
         )
         response = plaid_client.item_public_token_exchange(request_obj)
-        access_token = response['access_token']
+        # Access the access_token attribute from the response object
+        access_token = response.access_token
         
         # Save to .env file
         save_access_token(access_token)
@@ -282,6 +286,7 @@ def exchange_public_token():
             'message': 'Access token saved to .env'
         })
     except Exception as e:
+        print(f"Error exchanging token: {str(e)}")
         return jsonify({'error': str(e)}), 400
 
 def save_access_token(access_token):
